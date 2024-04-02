@@ -69,12 +69,12 @@ class SoftWebauthnDevice():
         # generate credential response
         client_data = {
             'type': 'webauthn.create',
-            'challenge': options['publicKey']['challenge'].decode("utf8").rstrip('='),
+            'challenge': options['publicKey']['challenge'].rstrip('='),
             'origin': origin
         }
 
         rp_id_hash = sha256(self.rp_id.encode("utf8"))
-        flags = b'\x41'  # attested_data + user_present
+        flags = b'\x45'  # attested_data + user_present + user_verified
         sign_count = pack('>I', self.sign_count)
         credential_id_length = pack('>H', len(self.credential_id))
         cose_key = cbor.encode(ES256.from_cryptography_key(self.private_key.public_key()))
@@ -84,11 +84,21 @@ class SoftWebauthnDevice():
 
         return {
             'id': urlsafe_b64encode(self.credential_id).decode("utf8"),
-            'rawId': self.credential_id.decode("latin-1"),
+            'rawId': urlsafe_b64encode(self.credential_id).decode("utf8"),
             'response': {
                 'clientDataJSON': urlsafe_b64encode(json.dumps(client_data).encode("utf8")).decode("ascii"),
-                'attestationObject':  urlsafe_b64encode(cbor.encode(attestation_object)).decode("utf8")
+                'attestationObject':  urlsafe_b64encode(cbor.encode(attestation_object)).decode("utf8"),
+                'transports': ['internal'],
+                'authenticatorData': urlsafe_b64encode(authenticator_data).decode("ascii"),
+                'publicKeyAlgorithm': -7,
+                'publicKey': urlsafe_b64encode(cose_key).decode('utf8'),
             },
+            'clientExtensionResults': {
+                'credProps': {
+                    'rk': options['publicKey']['extensions']['credProps'],
+                }
+            },
+            'authenticatorAttachment': 'platform',
             'type': 'public-key'
         }
 
@@ -171,7 +181,7 @@ class SoftWebauthnDevice():
         # prepare signature
         client_data = json.dumps({
             'type': 'webauthn.get',
-            'challenge': (options['publicKey']['challenge']).decode('ascii').rstrip('='),
+            'challenge': (options['publicKey']['challenge']).rstrip('='),
             'origin': origin
         }).encode("utf8")
         client_data_hash = sha256(client_data)

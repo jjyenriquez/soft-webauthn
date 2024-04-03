@@ -18,7 +18,8 @@ from cryptography.x509.oid import NameOID
 from fido2 import cbor
 from fido2.cose import ES256
 from fido2.utils import sha256
-from fido2.webauthn import AttestedCredentialData, CredentialCreationOptions, CredentialRequestOptions
+from fido2.webauthn import AttestedCredentialData, CredentialCreationOptions, CredentialRequestOptions, \
+    PublicKeyCredentialCreationOptions, PublicKeyCredentialRequestOptions
 
 
 class SoftWebauthnDevice():
@@ -53,7 +54,10 @@ class SoftWebauthnDevice():
             ES256.from_cryptography_key(self.private_key.public_key())
         )
 
-    def create(self, options: Union[CredentialCreationOptions, Dict], origin: str):
+    def create(self, options: PublicKeyCredentialCreationOptions, origin: str):
+        return self._create(dict(publicKey=options), origin)
+
+    def _create(self, options: Union[CredentialCreationOptions, Dict], origin: str):
         """create credential and return PublicKeyCredential object aka attestation"""
 
         if {'alg': -7, 'type': 'public-key'} not in options['publicKey']['pubKeyCredParams']:
@@ -170,7 +174,10 @@ class SoftWebauthnDevice():
 
         return attestation_certificate, attestation_private_key
 
-    def get(self, options: Union[CredentialRequestOptions, Dict], origin: str):
+    def get(self, options: PublicKeyCredentialRequestOptions, origin: str):
+        return self._get(dict(publicKey=options), origin)
+
+    def _get(self, options: Union[CredentialRequestOptions, Dict], origin: str):
         """get authentication credential aka assertion"""
 
         if self.rp_id != options['publicKey']['rpId']:

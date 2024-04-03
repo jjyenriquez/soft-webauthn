@@ -54,3 +54,25 @@ make lint
 make test
 make coverage
 ```
+
+
+## Usage
+```
+from soft_webauthn import SoftWebauthnDevice
+
+device = SoftWebauthnDevice()
+
+# register
+someResponse = httpClient.get('https://www.my-website.com/your/path/to/register-passkey')
+reg = someResponse.reg_options  # type: fido2.webauthn.PublicKeyCredentialCreationOptions
+registration_data = device.create(reg, "https://www.my-website.com")
+httpClient.post('https://www.my-website.com/your/path/to/register-passkey', registration_data)
+
+
+# auth
+someOtherResponse = httpClient.get('https://www.my-website.com/your/path/to/authenticate-via-passkey')
+auth = someOtherResponse.auth_options  # type: fido2.webauthn.PublicKeyCredentialRequestOptions
+auth_data = device.get(auth, "https://www.my-website.com")
+httpClient.post('https://www.my-website.com/your/path/to/authenticate-via-passkey', auth_data)
+
+```
